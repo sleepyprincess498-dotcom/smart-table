@@ -3,13 +3,11 @@ import {makeIndex} from "./lib/utils.js";
 const BASE_URL = 'https://webinars.webdev.education-services.ru/sp7-api';
 
 export function initData(sourceData) {
-// переменные для кеширования данных
     let sellers;
     let customers;
     let lastResult;
     let lastQuery;
 
-    // функция для приведения строк в тот вид, который нужен нашей таблице
     const mapRecords = (data) => data.map(item => ({
         id: item.receipt_id,
         date: item.date,
@@ -18,29 +16,34 @@ export function initData(sourceData) {
         total: item.total_amount
     }));
 
-    // функция получения индексов
     const getIndexes = async () => {
-        if (!sellers || !customers) { // если индексы ещё не установлены, то делаем запросы
-            [sellers, customers] = await Promise.all([ // запрашиваем и деструктурируем в уже объявленные ранее переменные
-                fetch(`${BASE_URL}/sellers`).then(res => res.json()), // запрашиваем продавцов
-                fetch(`${BASE_URL}/customers`).then(res => res.json()), // запрашиваем покупателей
-            ]);
+        if (!sellers || !customers) {
+            try {
+                [sellers, customers] = await Promise.all([
+                    fetch(`${BASE_URL}/sellers`).then(res => res.json()),
+                    fetch(`${BASE_URL}/customers`).then(res => res.json()),
+                ]);
+            } catch (e) {
+                // fallback на локальные данные
+                sellers = makeIndex(sourceData.sellers, 'id');
+                customers = makeIndex(sourceData.customers, 'id');
+            }
         }
 
         return { sellers, customers };
     }
 
-    // функция получения записей о продажах с сервера
-        const getRecords = async (query, isUpdated = false) => {
-            await getIndexes(); // убедимся что индексы загружены перед маппингом
+    const getRecords = async (query, isUpdated = false) => {
+        await getIndexes();
 
-            const qs = new URLSearchParams(query);
-            const nextQuery = qs.toString();
+        const qs = new URLSearchParams(query);
+        const nextQuery = qs.toString();
 
-            if (lastQuery === nextQuery && !isUpdated) {
-                return lastResult;
-            }
+        if (lastQuery === nextQuery && !isUpdated) {
+            return lastResult;
+        }
 
+        try {
             const response = await fetch(`${BASE_URL}/records?${nextQuery}`);
             const records = await response.json();
 
@@ -49,12 +52,25 @@ export function initData(sourceData) {
                 total: records.total,
                 items: mapRecords(records.items)
             };
+        } catch (e) {
+            // fallback на локальные данные
+            const page = query.page ?? 1;
+            const limit = query.limit ?? 10;
+            const skip = (page - 1) * limit;
+            const items = sourceData.purchase_records.slice(skip, skip + limit);
 
-            return lastResult;
-        };
+            lastQuery = nextQuery;
+            lastResult = {
+                total: sourceData.purchase_records.length,
+                items: mapRecords(items)
+            };
+        }
+
+        return lastResult;
+    };
 
     return {
         getIndexes,
         getRecords
-    }; 
+    };
 }
