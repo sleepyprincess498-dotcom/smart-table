@@ -1,10 +1,10 @@
-import {sortCollection, sortMap} from "../lib/sort.js";
+import {sortMap} from "../lib/sort.js";
 
 export function initSorting(columns) {
     let field = null;
     let order = null;
 
-    return (data, state, action) => {
+    return (query, state, action) => {
 
         if (action && action.name === 'sort') {
 
@@ -30,6 +30,7 @@ export function initSorting(columns) {
             }); 
         }
 
-        return sortCollection(data, field, order);
+        const sort = (field && order !== 'none') ? `${field}:${order}` : null;
+        return sort ? Object.assign({}, query, { sort }) : query;
     }
 }

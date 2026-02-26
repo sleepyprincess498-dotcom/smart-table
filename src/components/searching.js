@@ -1,5 +1,3 @@
-import { rules, createComparison } from "../lib/compare.js";
-
 /**
  * Инициализация поиска по таблице
  * @param {string} searchField - имя поля формы поиска
@@ -7,13 +5,12 @@ import { rules, createComparison } from "../lib/compare.js";
  */
 export function initSearching(searchField) {
     // Создаём компаратор только с правилом поиска по нужным колонкам
-    const compare = createComparison([
-        rules.searchMultipleFields(searchField, ['date', 'customer', 'seller'], false)
-    ]);
+    
 
     // Возвращаем функцию, которая принимает данные, состояние и событие
-    return (data, state, action) => {
-        // Фильтруем данные по введённому поиску
-        return data.filter(row => compare(row, state));
-    };
+    return (query, state, action) => { // result заменили на query
+        return state[searchField] ? Object.assign({}, query, { // проверяем, что в поле поиска было что-то введено
+            search: state[searchField] // устанавливаем в query параметр
+    }) : query; // если поле с поиском пустое, просто возвращаем query без изменений
+} 
 }
