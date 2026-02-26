@@ -24,9 +24,12 @@ export function initData(sourceData) {
                     fetch(`${BASE_URL}/customers`).then(res => res.json()),
                 ]);
             } catch (e) {
-                // fallback на локальные данные
-                sellers = makeIndex(sourceData.sellers, 'id');
-                customers = makeIndex(sourceData.customers, 'id');
+                sellers = makeIndex(sourceData.sellers, 'id', 
+                    item => `${item.first_name} ${item.last_name}`
+                );
+                customers = makeIndex(sourceData.customers, 'id', 
+                    item => `${item.first_name} ${item.last_name}`
+                );
             }
         }
 
