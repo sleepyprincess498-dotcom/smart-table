@@ -19,6 +19,12 @@ export function initFiltering(elements, indexes) {
 
     const applyFiltering = (query, state, action) => {
         // код с обработкой очистки поля
+        if (action && action.name === 'clear') {
+            const fieldName = action.dataset.field;
+            if (elements[`searchBy${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}`]) {
+                elements[`searchBy${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}`].value = '';
+            }
+        }
          
 
         // @todo: #4.5 — отфильтровать данные, используя компаратор
